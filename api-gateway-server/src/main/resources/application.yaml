@@ -1,0 +1,79 @@
+# ===================================================================
+# API GATEWAY CONFIGURATION
+# This server acts as the entry point for all client requests.
+# ===================================================================
+
+server:
+  # The port on which the Gateway service will run.
+  port: 8090
+
+spring:
+  application:
+    # Service name used for registration in Eureka Service Discovery.
+    name: API-GATEWAY-SERVER
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          # Define routing rules to redirect traffic to specific microservices.
+          routes:
+            # 1. USER SERVICE ROUTE
+            - id: USER-SERVICE
+              # 'lb://' enables client-side load balancing via Eureka.
+              uri: lb://USER-SERVICE
+              predicates:
+                # Routes all user-related requests (Auth, Profile, etc.) to the User Service.
+                - Path=/auth/**,/users/**,/api/users/**,/
+
+            # 2. TASK SERVICE ROUTE
+            - id: TASK-SERVICE
+              uri: lb://TASK-SERVICE
+              predicates:
+                # Routes task management requests to the Task Service.
+                - Path=/api/tasks/**,/tasks/**
+
+            # 3. TASK SUBMISSION SERVICE ROUTE
+            - id: TASK-SUBMISSION
+              uri: lb://TASK-SUBMISSION-SERVICE
+              predicates:
+                # Routes submission-specific requests to the Submission Service.
+                - Path=/api/submissions/**,/submissions
+
+      # CROSS-ORIGIN RESOURCE SHARING (CORS)
+      # Essential for allowing Frontend applications (like React/Angular) to call the API.
+      globalcors:
+        cors-configurations:
+          '[/**]': # Apply to all paths
+            allowedOrigins: "*" # Allows requests from any origin (Update this for production security!)
+            allowedMethods: "*" # Allows all HTTP methods (GET, POST, PUT, DELETE, etc.)
+            allowedHeaders: "*" # Allows all headers (including Authorization for JWT)
+
+# OBSERVABILITY & DISTRIBUTED TRACING
+# Helps in tracking a request as it travels through different microservices.
+management:
+  tracing:
+    sampling:
+      # 1.0 means 100% of requests are traced. Useful for development.
+      probability: 1.0
+  zipkin:
+    tracing:
+      # The endpoint where Zipkin is running to collect and visualize trace data.
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+  endpoints:
+    web:
+      # Base path for Spring Boot Actuator monitoring tools.
+      base-path: /actuator
+      exposure:
+        # Expose specific monitoring endpoints for health checks and gateway status.
+        include: gateway,health,info
+
+# SERVICE DISCOVERY (EUREKA)
+# The Gateway needs to connect to Eureka to find the location (IP/Port) of other services.
+eureka:
+  client:
+    service-url:
+      # The URL of the Eureka Discovery Server. 
+      # Note: Ensure the 'task_user_service' and others are registered here.
+      defaultZone: http://localhost:8085/eureka/
