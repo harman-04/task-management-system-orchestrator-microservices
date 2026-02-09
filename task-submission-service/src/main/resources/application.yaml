@@ -1,0 +1,56 @@
+# ================================
+# Server Configuration
+# ================================
+server:
+  port: 8083
+  # The Task Submission Service will run on port 8083.
+  # Example: http://localhost:8083/api/submissions
+
+# ================================
+# Spring Application Configuration
+# ================================
+spring:
+  application:
+    name: TASK-SUBMISSION-SERVICE
+    # The name of this microservice.
+    # Used for service discovery in Eureka and distributed tracing.
+    # Other services will identify this as "TASK-SUBMISSION-SERVICE".
+
+  mongodb:
+    uri: mongodb+srv://username:password@taskuserservice.xcpl6ae.mongodb.net/taskSubmissionService?retryWrites=true&w=majority
+    # Connection URI for MongoDB Atlas cluster.
+    # Includes:
+    # - username: "username"
+    # - password: "password" (⚠️ should be replaced with a secure password in production!)
+    # - cluster: taskuserservice.xcpl6ae.mongodb.net
+    # - database: taskSubmissionService
+    # retryWrites=true → ensures writes are retried on transient errors.
+    # w=majority → ensures write acknowledgment from majority of nodes.
+
+# ================================
+# Eureka Client Configuration
+# ================================
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8085/eureka
+      # URL of the Eureka server (service registry).
+      # This microservice will register itself with Eureka at port 8085.
+      # Other microservices (like TASK-SERVICE, USER-SERVICE) can discover "TASK-SUBMISSION-SERVICE" via Eureka.
+
+# ================================
+# Distributed Tracing Configuration
+# ================================
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+      # Sampling probability for tracing.
+      # 1.0 → trace 100% of requests (good for debugging, but heavy in production).
+
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+      # Zipkin server endpoint for collecting traces.
+      # Zipkin must be running locally on port 9411.
+      # This allows you to visualize request flows across microservices.
