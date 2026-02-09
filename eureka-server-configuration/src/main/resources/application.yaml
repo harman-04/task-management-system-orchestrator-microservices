@@ -1,0 +1,58 @@
+# ================================
+# Server Configuration
+# ================================
+server:
+  port: 8085
+  # Eureka Server will run on port 8085.
+  # Example: http://localhost:8085/eureka
+
+# ================================
+# Spring Application Configuration
+# ================================
+spring:
+  application:
+    name: EUREKA-SERVER
+    # The name of this microservice.
+    # Identifies this application as the Eureka Server.
+
+# ================================
+# Eureka Server Configuration
+# ================================
+eureka:
+  instance:
+    hostname: localhost
+    # Hostname of the Eureka Server instance.
+    # Other services will connect to this host.
+
+  client:
+    register-with-eureka: false
+    # Since this is the Eureka Server itself, it should not register with another Eureka.
+    fetch-registry: false
+    # Eureka Server does not need to fetch registry information from another server.
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka
+      # Default zone URL where clients (USER-SERVICE, TASK-SERVICE, TASK-SUBMISSION-SERVICE)
+      # will register themselves.
+      # Expands to: http://localhost:8085/eureka
+
+  server:
+    enable-self-preservation: false
+    # Self-preservation mode protects against accidental mass eviction of services.
+    # Disabled here for development/testing (⚠️ should be enabled in production).
+
+# ================================
+# Distributed Tracing Configuration
+# ================================
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+      # Sampling probability for tracing.
+      # 1.0 → trace 100% of requests (good for debugging, but heavy in production).
+
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+      # Zipkin server endpoint for collecting traces.
+      # Zipkin must be running locally on port 9411.
+      # This allows you to visualize request flows across microservices.
