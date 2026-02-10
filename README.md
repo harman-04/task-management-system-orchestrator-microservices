@@ -334,17 +334,17 @@ This diagram shows how the different components within your service interact to 
 
 ```mermaid
 graph TD
-    Client["Client (e.g., Frontend/Postman)"] --> API_Gateway[API Gateway / Load Balancer]
-    API_Gateway --> Security_Filter_Chain[Security Filter Chain]
+    Client["Client (e.g., Frontend/Postman)"] --> API_Gateway["API Gateway / Load Balancer"]
+    API_Gateway --> Security_Filter_Chain["Security Filter Chain"]
 
-    subgraph ServiceContainer ["Task User Service (Spring Boot)"]
+    subgraph ServiceContainer ["User Service (Spring Boot)"]
         Security_Filter_Chain -- "/auth/** (PermitAll)" --> Auth_Controller[AuthController]
-        Security_Filter_Chain -- "/api/** (Authenticated)" --> Jwt_Token_Validator[JwtTokenValidator Filter]
+        Security_Filter_Chain -- "/api/** (Authenticated)" --> Jwt_Token_Validator["JwtTokenValidator Filter"]
 
         Jwt_Token_Validator -- "Valid Token" --> User_Controller[UserController]
         Jwt_Token_Validator -- "Invalid/No Token" --> Reject["Reject Request (401/403)"]
 
-        Auth_Controller -- "Signup/Signin" --> Customer_Service["CustomerServiceImplementation (UserDetailsService)"]
+        Auth_Controller -- "Signup/Signin" --> Customer_Service["CustomerService (UserDetailsService)"]
         User_Controller -- "Get Profile/Users" --> User_Service[UserServiceImplementation]
 
         Customer_Service -- "Load User" --> User_Repository["UserRepository (MongoRepository)"]
@@ -355,15 +355,20 @@ graph TD
 
         Auth_Controller -- "Hash Password" --> Password_Encoder[BCryptPasswordEncoder]
 
-        Customer_Service -.-> Circuit_Breaker[Resilience4j Circuit Breaker]
+        Customer_Service -.-> Circuit_Breaker["Resilience4j Circuit Breaker"]
         User_Service -.-> Circuit_Breaker
     end
 
     User_Repository --> MongoDB[(MongoDB Atlas)]
 
-    style Client fill:#f9f,stroke:#333,stroke-width:2px
-    style MongoDB fill:#ff9,stroke:#f66,stroke-width:2px,color:black
-    style ServiceContainer fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    %% UNIVERSAL THEME STYLING
+    style Client fill:#f9f,stroke:#333,stroke-width:2px,color:#000
+    style MongoDB fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    style ServiceContainer fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#000
+    style Security_Filter_Chain fill:#d1c4e9,stroke:#512da8,stroke-width:2px,color:#000
+    style Jwt_Token_Validator fill:#d1c4e9,stroke:#512da8,stroke-width:2px,color:#000
+    style Jwt_Provider fill:#d1c4e9,stroke:#512da8,stroke-width:2px,color:#000
+    style Reject fill:#ffcdd2,stroke:#c62828,stroke-width:2px,color:#000
 ```
 
 ---
