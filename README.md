@@ -1,10 +1,8 @@
-#  Task Orchestrator: Distributed Microservices Ecosystem
-
-[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://jdk.java.net/25/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-brightgreen.svg)](https://spring.io/projects/spring-boot) 
-[![Security](https://img.shields.io/badge/Security-JWT_Stateless-blue.svg)]()
 
 #  Master Technical Documentation: Task Management Ecosystem
+[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://jdk.java.net/25/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Security](https://img.shields.io/badge/Security-JWT_Stateless-blue.svg)]()
 
 This project is a cutting-edge **Microservices Architecture** built using **Java 25**, **Spring Boot 4.0.x**, and **Spring Cloud 2025.1.0**. It is designed for maximum scalability, observability, and security.
 
@@ -69,63 +67,67 @@ This diagram illustrates how all the components you provided fit together into a
 
 ```mermaid
 graph TD
-    Client[External Client Browser/Postman] -->Gateway
+    Client["External Client Browser/Postman"] --> Gateway
 
-    subgraph "Infra Services"
-        Eureka[Eureka Server Registry Port: 8085]
-        Zipkin[Zipkin Tracing Port: 9411]
+    subgraph Infra_Services ["Infra Services"]
+        Eureka["Eureka Server Registry (8085)"]
+        Zipkin["Zipkin Tracing (9411)"]
     end
 
-    subgraph "Edge Server"
-        Gateway[API Gateway Server Port: 8090]
+    subgraph Edge_Server ["Edge Server"]
+        Gateway["API Gateway Server (8090)"]
     end
 
-    subgraph "Business Microservices"
-        UserService[USER-SERVICE Port: 8081]
-        TaskService[TASK-SERVICE Port: 8082]
-        SubService[TASK-SUBMISSION-SERVICE Port: 8083]
+    subgraph Business_Services ["Business Microservices"]
+        UserService["USER-SERVICE (8081)"]
+        TaskService["TASK-SERVICE (8082)"]
+        SubService["TASK-SUBMISSION-SERVICE (8083)"]
     end
 
-    subgraph "Databases (MongoDB Atlas)"
+    subgraph Databases ["Databases (MongoDB Atlas)"]
         UserDB[(taskDB)]
         TaskDB[(taskService DB)]
         SubDB[(taskSubmission DB)]
     end
 
-    %% Gateway Routing based on application.yml paths
+%% Gateway Routing
     Gateway -- "/auth/**, /users/**" --> UserService
     Gateway -- "/api/tasks/**" --> TaskService
     Gateway -- "/api/submissions/**" --> SubService
 
-    %% Service Registration & Discovery
-    Gateway -.-> |Discover Services| Eureka
-    UserService -.-> |Register| Eureka
-    TaskService -.-> |Register| Eureka
-    SubService -.-> |Register| Eureka
+%% Service Registration & Discovery
+    Gateway -.-> Eureka
+    UserService -.-> Eureka
+    TaskService -.-> Eureka
+    SubService -.-> Eureka
 
-    %% Inter-Service Comm (Feign Clients with JWT Token)
-    TaskService -- "Feign: Get User Profile/Role" --> UserService
-    SubService -- "Feign: Get User Profile" --> UserService
-    SubService -- "Feign: Get Task / Complete Task" --> TaskService
+%% Inter-Service Comm
+    TaskService -- "Feign: User Profile" --> UserService
+    SubService -- "Feign: User Profile" --> UserService
+    SubService -- "Feign: Task Details" --> TaskService
 
-    %% Database Connections
+%% Database Connections
     UserService --> UserDB
     TaskService --> TaskDB
     SubService --> SubDB
 
-    %% Tracing
+%% Tracing
     Gateway -.-> Zipkin
     UserService -.-> Zipkin
     TaskService -.-> Zipkin
     SubService -.-> Zipkin
 
-    style Gateway fill:#e1bee7,stroke:#8e24aa,stroke-width:2px
-    style Eureka fill:#fff8e1,stroke:#ffca28,stroke-width:2px
-    style UserService fill:#bbdefb,stroke:#1e88e5,stroke-width:2px
-    style TaskService fill:#f8bbd0,stroke:#c2185b,stroke-width:2px
-    style SubService fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
-    style Client fill:#f9f,stroke:#333,stroke-width:2px
-
+%% UNIVERSAL THEME STYLING
+    style Client fill:#f9f,stroke:#333,stroke-width:2px,color:#000
+    style Gateway fill:#e1bee7,stroke:#8e24aa,stroke-width:2px,color:#000
+    style Eureka fill:#fff8e1,stroke:#ffca28,stroke-width:2px,color:#000
+    style Zipkin fill:#cfd8dc,stroke:#37474f,stroke-width:2px,color:#000
+    style UserService fill:#bbdefb,stroke:#1e88e5,stroke-width:2px,color:#000
+    style TaskService fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    style SubService fill:#c8e6c9,stroke:#388e3c,stroke-width:2px,color:#000
+    style UserDB fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    style TaskDB fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    style SubDB fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
 ```
 
 ---
@@ -141,45 +143,48 @@ This flow demonstrates how a user signs in. This is the only time a request does
 sequenceDiagram
     autonumber
     actor Client
-    box "Edge" #e1bee7
-    participant Gateway as API Gateway (8090)
-    end
-    box "User Service" #bbdefb
-    participant AuthCtrl as AuthController
-    participant AuthMgr as AuthenticationManager
-    participant JwtProv as JwtProvider
-    end
-    box "Database" #fff9c4
-    participant Mongo as MongoDB (UserDB)
-    end
 
-    Note over Client, Gateway: Client sends credentials to Gateway
-    Client->>Gateway: POST http://localhost:8090/auth/signin (LoginRequest)
-    activate Gateway
-    Note right of Gateway: Routes to lb://USER-SERVICE based on path /auth/**
-    Gateway->>AuthCtrl: POST /auth/signin
-    activate AuthCtrl
-    
-    AuthCtrl->>AuthMgr: Authenticate(email, password)
-    activate AuthMgr
-    AuthMgr->>Mongo: Find user by email
-    Mongo-->>AuthMgr: Return User Details + Hashed Password
-    AuthMgr->>AuthMgr: Compare password hash
-    AuthMgr-->>AuthCtrl: Authentication Successful Object
-    deactivate AuthMgr
+box "Edge" #e1bee7
+participant Gateway as "API Gateway (8090)"
+end
 
-    Note right of AuthCtrl: Generate Token if auth successful
-    AuthCtrl->>JwtProv: generateToken(auth)
-    activate JwtProv
-    JwtProv-->>AuthCtrl: Returns JWT String (with Roles)
-    deactivate JwtProv
+box "User Service" #bbdefb
+participant AuthCtrl as "AuthController"
+participant AuthMgr as "AuthenticationManager"
+participant JwtProv as "JwtProvider"
+end
 
-    AuthCtrl-->>Gateway: HTTP 200 OK (AuthResponse containing JWT)
-    deactivate AuthCtrl
-    Gateway-->>Client: HTTP 200 OK (AuthResponse containing JWT)
-    deactivate Gateway
-    Note left of Client: Client must store this JWT for future requests
+box "Database" #fff9c4
+participant Mongo as "MongoDB (UserDB)"
+end
 
+Note over Client, Gateway: Client sends credentials to Gateway
+Client->>Gateway: POST /auth/signin (LoginRequest)
+activate Gateway
+Note right of Gateway: Routes to lb://USER-SERVICE
+Gateway->>AuthCtrl: POST /auth/signin
+activate AuthCtrl
+
+AuthCtrl->>AuthMgr: Authenticate(email, password)
+activate AuthMgr
+AuthMgr->>Mongo: Find user by email
+Mongo-->>AuthMgr: Return User Details
+AuthMgr->>AuthMgr: Compare password hash
+AuthMgr-->>AuthCtrl: Authentication Success
+deactivate AuthMgr
+
+Note right of AuthCtrl: Generate Token
+AuthCtrl->>JwtProv: generateToken(auth)
+activate JwtProv
+JwtProv-->>AuthCtrl: Returns JWT String
+deactivate JwtProv
+
+AuthCtrl-->>Gateway: HTTP 200 OK (JWT)
+deactivate AuthCtrl
+Gateway-->>Client: HTTP 200 OK (JWT)
+deactivate Gateway
+
+Note left of Client: Store JWT for future requests
 ```
 
 ---
@@ -555,29 +560,29 @@ This diagram shows the components of the `TASK-SERVICE` and its interaction with
 
 ```mermaid
 graph TD
-    Client[Client (e.g., Frontend/Postman)] --> API_Gateway[API Gateway / Load Balancer]
+    Client["Client (e.g., Frontend/Postman)"] --> API_Gateway["API Gateway / Load Balancer"]
     API_Gateway -- "/api/tasks/**" --> Task_Controller[TaskController]
-    
-    subgraph "Task Service (Spring Boot)"
+
+    subgraph Task_Service_SB ["Task Service (Spring Boot)"]
         Task_Controller -- "Create/Get/Update Task" --> Task_Service[TaskServiceImplementation]
-        Task_Service -- "CRUD Operations" --> Task_Repository[TaskRepository (MongoRepository)]
-        
-        Task_Controller -- "Get User Profile (via Feign)" --> User_Feign_Client[UserServiceClient (Feign Client)]
-        
+        Task_Service -- "CRUD Operations" --> Task_Repository["TaskRepository (MongoRepository)"]
+
+        Task_Controller -- "Get User Profile (via Feign)" --> User_Feign_Client["UserServiceClient (Feign Client)"]
+
         Task_Service -- "Filter & Sort Tasks" --> Task_Service
     end
 
     User_Feign_Client -- "HTTP GET /api/users/profile" --> User_Service_App["USER-SERVICE (External Microservice)"]
     Task_Repository --> MongoDB[(MongoDB Atlas - taskService DB)]
-    
-    User_Service_App -.-> Eureka[Eureka Server (Service Discovery)]
-    Task_Service_App -.-> Eureka
 
-    style Client fill:#f9f,stroke:#333,stroke-width:2px
-    style MongoDB fill:#ff9,stroke:#f66,stroke-width:2px,color:black
-    style "Task Service (Spring Boot)" fill:#fff0f5,stroke:#db7093,stroke-width:2px
-    style User_Service_App fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    User_Service_App -.-> Eureka["Eureka Server (Service Discovery)"]
 
+%% UNIVERSAL THEME STYLING
+    style Client fill:#e1bee7,stroke:#4a148c,stroke-width:2px,color:#000
+    style MongoDB fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    style Task_Service_SB fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style User_Service_App fill:#bbdefb,stroke:#0d47a1,stroke-width:2px,color:#000
+    style Eureka fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000
 ```
 
 **Key Interactions:**
@@ -714,32 +719,32 @@ This diagram shows the components of the `TASK-SUBMISSION-SERVICE` and its inter
 
 ```mermaid
 graph TD
-    Client[Client (e.g., Frontend/Postman)] --> API_Gateway[API Gateway / Load Balancer]
+    Client["Client (e.g., Frontend/Postman)"] --> API_Gateway["API Gateway / Load Balancer"]
     API_Gateway -- "/api/submissions/**" --> Sub_Controller[SubController]
-    
-    subgraph "Task Submission Service (Spring Boot)"
+
+    subgraph Sub_Service_SB ["Task Submission Service (Spring Boot)"]
         Sub_Controller -- "Submit/Get/Update Submission" --> Sub_Service[SubmissionServiceImplementation]
-        Sub_Service -- "CRUD Operations" --> Sub_Repository[SubRepository (MongoRepository)]
-        
-        Sub_Controller -- "Get User Profile (via Feign)" --> User_Feign_Client[UserServiceClient (Feign Client)]
-        Sub_Service -- "Validate/Complete Task (via Feign)" --> Task_Feign_Client[TaskServiceClient (Feign Client)]
+        Sub_Service -- "CRUD Operations" --> Sub_Repository["SubRepository (MongoRepository)"]
+
+        Sub_Controller -- "Get User Profile (via Feign)" --> User_Feign_Client["UserServiceClient (Feign Client)"]
+        Sub_Service -- "Validate/Complete Task (via Feign)" --> Task_Feign_Client["TaskServiceClient (Feign Client)"]
     end
 
     User_Feign_Client -- "HTTP GET /api/users/profile" --> User_Service_App["USER-SERVICE (External)"]
     Task_Feign_Client -- "HTTP GET/PUT /api/tasks/**" --> Task_Service_App["TASK-SERVICE (External)"]
-    
-    Sub_Repository --> MongoDB[(MongoDB Atlas - taskSubmissionService DB)]
-    
-    User_Service_App -.-> Eureka[Eureka Server (Service Discovery)]
+
+    Sub_Repository --> MongoDB[(MongoDB Atlas - submissionDB)]
+
+    User_Service_App -.-> Eureka["Eureka Server (Service Discovery)"]
     Task_Service_App -.-> Eureka
-    Task_Submission_Service_App -.-> Eureka
 
-    style Client fill:#f9f,stroke:#333,stroke-width:2px
-    style MongoDB fill:#ff9,stroke:#f66,stroke-width:2px,color:black
-    style "Task Submission Service (Spring Boot)" fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
-    style User_Service_App fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
-    style Task_Service_App fill:#fff0f5,stroke:#db7093,stroke-width:2px
-
+%% UNIVERSAL THEME STYLING
+    style Client fill:#e1bee7,stroke:#4a148c,stroke-width:2px,color:#000
+    style MongoDB fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    style Sub_Service_SB fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000
+    style User_Service_App fill:#bbdefb,stroke:#0d47a1,stroke-width:2px,color:#000
+    style Task_Service_App fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style Eureka fill:#cfd8dc,stroke:#37474f,stroke-width:2px,color:#000
 ```
 
 **Key Interactions:**
@@ -904,40 +909,44 @@ This diagram shows the Eureka Server's role as the central hub that other micros
 
 ```mermaid
 graph TD
-    subgraph "Infrastructure"
+    subgraph Infrastructure
         Zipkin[(Zipkin Distributed Tracing)]
     end
 
-    subgraph "Eureka Server Application (Port 8085)"
+    subgraph Eureka_Sub ["Eureka Server Application (Port 8085)"]
         EurekaCore[Eureka Server Core / Registry Map]
         EurekaAPI[Eureka REST API]
     end
 
-    subgraph "Microservice Clients"
-        UserService[USER-SERVICE]
-        TaskService[TASK-SERVICE]
-        SubmissionService[TASK-SUBMISSION-SERVICE]
+    subgraph Microservice_Clients ["Microservice Clients"]
+        UserService["USER-SERVICE"]
+        TaskService["TASK-SERVICE"]
+        SubmissionService["TASK-SUBMISSION-SERVICE"]
     end
 
-    %% Registration flows
+%% Registration flows
     UserService -- "1. Register & Send Heartbeats" --> EurekaAPI
     TaskService -- "1. Register & Send Heartbeats" --> EurekaAPI
     SubmissionService -- "1. Register & Send Heartbeats" --> EurekaAPI
 
-    %% Discovery flows
-    TaskService -- "2. Fetch Registry (Where is USER-SERVICE?)" --> EurekaAPI
-    SubmissionService -- "2. Fetch Registry (Where are TASK & USER services?)" --> EurekaAPI
+%% Discovery flows
+    TaskService -- "2. Fetch Registry" --> EurekaAPI
+    SubmissionService -- "2. Fetch Registry" --> EurekaAPI
 
-    %% Internal
+%% Internal
     EurekaAPI --> EurekaCore
 
-    %% Tracing
-    EurekaCore -.->|"Report own spans"| Zipkin
+%% Tracing
+    EurekaCore -.->|"Report spans"| Zipkin
 
-    style EurekaCore fill:#ffecb3,stroke:#ff6f00,stroke-width:2px
-    style EurekaAPI fill:#ffe0b2,stroke:#e65100,stroke-width:2px
-    style "Eureka Server Application (Port 8085)" fill:#fff8e1,stroke:#ffca28,stroke-width:2px
-
+%% UNIVERSAL THEME STYLING
+    style Zipkin fill:#cfd8dc,stroke:#37474f,stroke-width:2px,color:#000
+    style EurekaCore fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    style EurekaAPI fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000
+    style Eureka_Sub fill:#fff8e1,stroke:#ffca28,stroke-width:2px,color:#000
+    style UserService fill:#bbdefb,stroke:#0d47a1,stroke-width:2px,color:#000
+    style TaskService fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    style SubmissionService fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000
 ```
 
 ---
@@ -1258,11 +1267,11 @@ Before testing APIs, open your browser to `http://localhost:8085`.
 ### **4. Advanced Debugging: Distributed Tracing (Zipkin)**
 We use Zipkin to visualize the lifecycle of a request. Below is a trace of a cross-service communication:
 
-<p align="center">
-![download.png](images/download.png)
+<div align="center">
+  <img src="images/download.png" alt="Request latency breakdown" width="600">
   <br>
-  <i>Figure: Request latency breakdown across User and Task services</i>
-</p>
+  <p><i>Figure: Request latency breakdown across User and Task services</i></p>
+</div>
 
 
 If a request feels slow, don't guess—look at the trace.
