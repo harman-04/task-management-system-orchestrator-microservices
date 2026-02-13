@@ -1,0 +1,71 @@
+services:
+
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    restart: always
+
+  eureka-server:
+    build: ./eureka-server-configuration
+    ports:
+      - "8085:8085"
+    depends_on:
+      - zipkin
+    environment:
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+
+  user-service:
+    build: ./task-user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - zipkin
+    environment:
+      - MONGO_URI=${USER_SERVICE_DB}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8085/eureka/
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+
+  task-service:
+    build: ./task-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+      - zipkin
+    environment:
+      - MONGO_URI=${TASK_SERVICE_DB}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8085/eureka/
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+
+  submission-service:
+    build: ./task-submission-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - eureka-server
+      - zipkin
+    environment:
+      - MONGO_URI=${SUBMISSION_SERVICE_DB}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8085/eureka/
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans
+
+
+  api-gateway:
+    build: ./api-gateway-server
+    ports:
+      - "8090:8090"
+    depends_on:
+      - eureka-server
+      - zipkin
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8085/eureka/
+      - SPRING_ZIPKIN_BASE_URL=http://zipkin:9411/
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://zipkin:9411/api/v2/spans

@@ -59,7 +59,7 @@ management:
   zipkin:
     tracing:
       # The endpoint where Zipkin is running to collect and visualize trace data.
-      endpoint: "http://localhost:9411/api/v2/spans"
+      endpoint: "${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}"
 
   endpoints:
     web:

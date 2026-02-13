@@ -1553,3 +1553,94 @@ It is pre-configured with **Postman Variables**, so once you log in, the token i
 ---
 
 
+##  Docker & Microservices Orchestration
+
+This project is fully containerized using **Docker** and orchestrated with **Docker Compose**. This ensures the entire ecosystem—including the databases and tracing tools—can be started with a single command, maintaining environment consistency.
+
+###  Infrastructure Overview
+
+* **Container Runtime:** Docker (Eclipse Temurin Java 25 JRE Alpine)
+* **Orchestration:** Docker Compose V2
+* **Service Discovery:** Netflix Eureka
+* **API Gateway:** Spring Cloud Gateway (Port 8090)
+* **Observability:** OpenZipkin (Distributed Tracing)
+
+---
+
+###  Container Structure
+
+Each microservice contains a multi-stage `Dockerfile` optimized for size using the Alpine Linux distribution.
+
+| Service | Port | Responsibility |
+| --- | --- | --- |
+| `EUREKA-SERVER` | 8085 | Service Registry & Discovery |
+| `API-GATEWAY` | 8090 | Routing, Load Balancing & CORS |
+| `USER-SERVICE` | 8081 | Auth, JWT & Profile Management |
+| `TASK-SERVICE` | 8082 | Task CRUD & User Assignment |
+| `SUBMISSION-SERVICE` | 8083 | Task Submissions & Approval Workflow |
+| `ZIPKIN` | 9411 | Distributed Tracing UI |
+
+---
+
+### How to Run the Entire System
+
+#### 1. Prerequisites
+
+* Docker Desktop installed and running.
+* Maven installed.
+* MongoDB Atlas cluster (or a local MongoDB instance).
+
+#### 2. Environment Setup
+
+Create a `.env` file in the root directory to securely store your database credentials:
+
+```properties
+USER_SERVICE_DB=mongodb+srv://<user>:<password>@cluster.mongodb.net/userDB
+TASK_SERVICE_DB=mongodb+srv://<user>:<password>@cluster.mongodb.net/taskDB
+SUBMISSION_SERVICE_DB=mongodb+srv://<user>:<password>@cluster.mongodb.net/subDB
+
+```
+
+#### 3. Build and Start
+
+Run the following commands in the project root:
+
+```bash
+# Compile all services and skip tests for faster build
+mvn clean package -DskipTests
+
+# Build and start all containers in the background
+docker-compose up --build -d
+
+```
+
+#### 4. Verification
+
+* **Eureka Dashboard:** `http://localhost:8085` (Check if all 5 services are "UP")
+* **Zipkin Tracing:** `http://localhost:9411` (View request latency graphs)
+* **API Gateway:** All requests should be sent to `http://localhost:8090`
+
+---
+
+###  Troubleshooting & Logs
+
+If a specific service is not appearing in Zipkin or Eureka, you can inspect the live logs:
+
+```bash
+# View logs for a specific service
+docker logs -f user-service
+
+# Restart the gateway if routes are not loading
+docker restart api-gateway
+
+```
+
+###  Why Java 25 & Docker?
+
+* **Java 25 (LTS):** Utilizes the latest performance enhancements and Virtual Threads for high-concurrency request handling.
+* **Alpine Images:** Reduced the base image size from ~300MB to ~80MB, ensuring faster deployment and lower memory overhead.
+* **Service Networking:** Used Docker's internal DNS (e.g., `http://zipkin:9411`) to decouple services from host machine IP addresses.
+
+---
+
+

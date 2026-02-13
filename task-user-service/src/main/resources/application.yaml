@@ -17,15 +17,9 @@ spring:
     # Other services will identify this as "USER-SERVICE".
 
   mongodb:
-    uri: mongodb+srv://username:password@taskuserservice.xcpl6ae.mongodb.net/taskDB?retryWrites=true&w=majority
+    uri: ${MONGO_URI}
     # Connection URI for MongoDB Atlas cluster.
-    # Includes:
-    # - username: "username"
-    # - password: "password" (should be replaced with a secure password in production!)
-    # - cluster: taskuserservice.xcpl6ae.mongodb.net
-    # - database: taskDB
-    # retryWrites=true → ensures writes are retried on transient errors.
-    # w=majority → ensures write acknowledgment from majority of nodes.
+
 
 # ================================
 # Distributed Tracing Configuration
@@ -38,7 +32,7 @@ management:
       # 1.0 → trace 100% of requests (good for debugging, but heavy in production).
   zipkin:
     tracing:
-      endpoint: "http://localhost:9411/api/v2/spans"
+      endpoint: "${MANAGEMENT_ZIPKIN_TRACING_ENDPOINT:http://localhost:9411/api/v2/spans}"
       # Zipkin server endpoint for collecting traces.
       # Zipkin must be running locally on port 9411.
       # This allows you to visualize request flows across microservices.
